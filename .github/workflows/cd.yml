@@ -2,15 +2,11 @@ name: CD
 
 on:
   push:
-    branches: [develop]
-  pull_request:
-    branches: [main]
-    types: [closed]
+    branches: [develop, main]
   workflow_dispatch:
 
 jobs:
   deploy:
-    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     concurrency:
       group: cd-lambda-${{ github.ref_name }}
@@ -60,3 +56,7 @@ jobs:
           code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$API/auth/token" \
             -H 'content-type: application/json' -d '{"cpf":"000"}')
           [ "$code" = "400" ] || { echo "esperado 400, veio $code"; exit 1; }
+          # CPF válido porém não cadastrado deve responder 401 (prova SSM -> RDS -> query)
+          code2=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$API/auth/token" \
+            -H 'content-type: application/json' -d '{"cpf":"52998224725"}')
+          [ "$code2" = "401" ] || { echo "esperado 401, veio $code2"; exit 1; }

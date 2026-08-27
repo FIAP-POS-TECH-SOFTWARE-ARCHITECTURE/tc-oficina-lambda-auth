@@ -30,6 +30,11 @@ describe("POST /auth/token", () => {
     expect(res.statusCode).toBe(400);
   });
 
+  it("retorna 400 para CPF não-string", async () => {
+    const res = await handler(evento({ cpf: 12345678909 }));
+    expect(res.statusCode).toBe(400);
+  });
+
   it("retorna 401 quando cliente não existe", async () => {
     mockBuscar.mockResolvedValue(null);
     const res = await handler(evento({ cpf: "12345678909" }));
