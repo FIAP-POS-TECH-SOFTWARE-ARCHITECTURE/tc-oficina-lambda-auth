@@ -141,8 +141,14 @@ Pré-requisito: os parâmetros SSM acima já existirem no ambiente alvo (provido
 ## Teste manual de ponta a ponta
 
 O fluxo completo (`token` → rota protegida sem token → rota protegida com token) depende do
-`tc-oficina-app` já estar deployado em homolog (spec 05 do planejamento da Fase 3), o que
-ainda não aconteceu neste ponto do desenvolvimento. Isso é esperado — está documentado como
-ação humana pendente no plano da fase, não é uma lacuna desta Lambda. Quando o app estiver
-no ar, o roteiro de teste (variável `API`, `curl` em `/auth/token` e nas rotas protegidas)
-está descrito na spec `04-lambda-auth-e-api-gateway` (Task 7, Step 1).
+`tc-oficina-app` já estar deployado em homolog, o que ainda não aconteceu neste ponto do
+desenvolvimento. Isso é esperado, não é uma lacuna desta Lambda. Quando o app estiver no ar,
+o roteiro de teste é:
+
+```bash
+API=<api_endpoint homolog>
+TOKEN=$(curl -s -X POST "$API/auth/token" -H 'content-type: application/json' \
+  -d '{"cpf":"<cpf de cliente ativo do seed>"}' | jq -r .token)
+curl -s -o /dev/null -w '%{http_code}\n' "$API/os/acompanhamento/OS-0001"   # 401 sem token
+curl -s -H "Authorization: Bearer $TOKEN" "$API/os/acompanhamento/OS-0001" # 200 com token
+```
