@@ -1,0 +1,15 @@
+node_modules/
+dist/
+*.zip
+.env
+.env.local
+.env.*.local
+.DS_Store
+*.log
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
