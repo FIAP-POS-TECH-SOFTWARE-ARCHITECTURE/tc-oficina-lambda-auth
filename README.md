@@ -4,6 +4,8 @@ Lambda de autenticação de cliente por CPF + API Gateway.
 
 Parte do sistema da oficina mecânica (Tech Challenge FIAP SOAT, Fase 3, grupo Integradores).
 
+Documentação arquitetural completa (componentes, sequências, RFCs, ADRs, DER): [`docs/arquitetura/`](https://github.com/FIAP-POS-TECH-SOFTWARE-ARCHITECTURE/tc-oficina-app/tree/main/docs/arquitetura) no `tc-oficina-app`. O fluxo de autenticação deste repositório está detalhado em [`sequencia-autenticacao.md`](https://github.com/FIAP-POS-TECH-SOFTWARE-ARCHITECTURE/tc-oficina-app/blob/main/docs/arquitetura/sequencia-autenticacao.md) e em [ADR-002](https://github.com/FIAP-POS-TECH-SOFTWARE-ARCHITECTURE/tc-oficina-app/blob/main/docs/arquitetura/adrs/adr-002-api-gateway-http-com-lambda-authorizer.md) / [ADR-003](https://github.com/FIAP-POS-TECH-SOFTWARE-ARCHITECTURE/tc-oficina-app/blob/main/docs/arquitetura/adrs/adr-003-jwt-hs256-segredo-compartilhado.md).
+
 ## Propósito
 
 Substitui autenticação de cliente por usuário/senha por um fluxo simples baseado em CPF:
