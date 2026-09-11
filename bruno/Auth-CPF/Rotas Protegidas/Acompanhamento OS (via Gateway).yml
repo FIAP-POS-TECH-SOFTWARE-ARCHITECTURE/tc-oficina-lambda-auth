@@ -1,0 +1,33 @@
+info:
+  name: Acompanhamento OS (via Gateway)
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{gatewayUrl}}/os/acompanhamento/{{osNumero}}"
+  auth: none
+
+headers:
+  - name: Authorization
+    value: "Bearer {{token}}"
+    enabled: true
+
+docs:
+  content: |-
+    Rota sensivel do cliente, servida pelo `tc-oficina-app` no EKS e exposta pelo
+    API Gateway atras do Lambda Authorizer. Prova que o token emitido em
+    "Emitir Token (CPF)" e aceito ponta a ponta.
+
+    - `200` -> dados da OS (nome do cliente mascarado).
+    - `401` -> sem token / token invalido / expirado (barrado no authorizer).
+    - `403` -> a OS pertence a outro cliente.
+    - `404` -> OS inexistente.
+
+    Rodar "Emitir Token (CPF)" antes e definir `osNumero` no ambiente.
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

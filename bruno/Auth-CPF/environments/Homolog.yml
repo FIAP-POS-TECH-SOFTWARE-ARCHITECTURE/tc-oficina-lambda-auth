@@ -1,0 +1,11 @@
+vars:
+  # endpoint do API Gateway HTTP API de homologacao
+  # (output `api_endpoint` do `terraform apply` neste repositorio,
+  #  ou parametro SSM /oficina/homolog/... conforme o ambiente)
+  gatewayUrl: https://SUA_API_ID.execute-api.us-east-1.amazonaws.com
+  # preenchido automaticamente pelo script da request "Emitir Token (CPF)"
+  token: ""
+  # CPF de um cliente ativo cadastrado na base (com ou sem mascara)
+  cpf: ""
+  # numero de uma OS do cliente autenticado, ex: OS-2026-0001
+  osNumero: ""
