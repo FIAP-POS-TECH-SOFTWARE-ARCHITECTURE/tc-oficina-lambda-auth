@@ -1,0 +1,67 @@
+{
+	"info": {
+		"name": "tc-oficina-lambda-auth — Auth por CPF",
+		"description": "Export equivalente da collection Bruno (bruno/Auth-CPF). Rode 'Auth > Emitir Token (CPF)' primeiro: o script salva o JWT na variável 'token'. Defina 'gatewayUrl' (output api_endpoint do terraform apply), 'cpf' (cliente ativo) e 'osNumero' antes de rodar.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{ "key": "gatewayUrl", "value": "https://SUA_API_ID.execute-api.us-east-1.amazonaws.com" },
+		{ "key": "token", "value": "" },
+		{ "key": "cpf", "value": "" },
+		{ "key": "osNumero", "value": "" }
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Emitir Token (CPF)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const body = pm.response.json();",
+									"if (body && body.token) { pm.collectionVariables.set('token', body.token); }"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cpf\": \"{{cpf}}\"\n}"
+						},
+						"url": {
+							"raw": "{{gatewayUrl}}/auth/token",
+							"host": [ "{{gatewayUrl}}" ],
+							"path": [ "auth", "token" ]
+						},
+						"description": "200 -> { token, expiresIn: 3600 } | 400 -> CPF inválido | 401 -> Não autorizado (CPF inexistente ou cliente inativo)."
+					}
+				}
+			]
+		},
+		{
+			"name": "Rotas Protegidas",
+			"item": [
+				{
+					"name": "Acompanhamento OS (via Gateway)",
+					"request": {
+						"method": "GET",
+						"header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+						"url": {
+							"raw": "{{gatewayUrl}}/os/acompanhamento/{{osNumero}}",
+							"host": [ "{{gatewayUrl}}" ],
+							"path": [ "os", "acompanhamento", "{{osNumero}}" ]
+						},
+						"description": "Rota sensível do cliente servida pelo tc-oficina-app e protegida pelo Lambda Authorizer. 200 -> dados da OS | 401 -> token ausente/inválido | 403 -> OS de outro cliente | 404 -> OS inexistente."
+					}
+				}
+			]
+		}
+	]
+}

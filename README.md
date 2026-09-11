@@ -42,6 +42,23 @@ O `401` é intencionalmente genérico: não diferencia "CPF não existe" de "cli
 para não vazar informação sobre a base de clientes. O JWT tem payload
 `{ sub, nome, cpf, type: "cliente" }`, assinado com HS256, expiração de 1h.
 
+## Collection das APIs (Bruno / Postman)
+
+Não há Swagger UI (a autenticação roda como Lambda atrás do API Gateway, sem servidor
+HTTP próprio). A collection cobre o fluxo completo:
+
+- **Bruno** (collection oficial, versionada): [`bruno/Auth-CPF`](bruno/Auth-CPF). Abrir com
+  [Bruno](https://www.usebruno.com/downloads) via **Open Collection**, escolher o ambiente
+  **Homolog** ou **Prod**, preencher `gatewayUrl` (output `api_endpoint` do
+  `terraform apply`), `cpf` (cliente ativo) e `osNumero`, e rodar
+  `Auth > Emitir Token (CPF)` — o script salva o JWT na variável `token`.
+- **Postman** (export equivalente):
+  [`bruno/auth-cpf.postman_collection.json`](bruno/auth-cpf.postman_collection.json).
+
+Requests: `POST /auth/token` (emissão do JWT pelo CPF) e
+`GET /os/acompanhamento/{numero}` (rota sensível do cliente servida pelo `tc-oficina-app`,
+atrás do Lambda Authorizer — prova o token ponta a ponta).
+
 ## Arquitetura
 
 ```mermaid

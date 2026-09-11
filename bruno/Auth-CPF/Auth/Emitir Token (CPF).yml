@@ -1,0 +1,41 @@
+info:
+  name: Emitir Token (CPF)
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: "{{gatewayUrl}}/auth/token"
+  auth: none
+  body:
+    type: json
+    data: |-
+      {
+        "cpf": "{{cpf}}"
+      }
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        if (res.body && res.body.token) {
+          bru.setEnvVar("token", res.body.token);
+        }
+
+docs:
+  content: |-
+    Emite o JWT de cliente a partir do CPF.
+
+    - `200` -> `{ "token": "<jwt>", "expiresIn": 3600 }` (cliente ativo). O script
+      after-response salva `token` no ambiente.
+    - `400` -> `{ "message": "CPF invalido" }` (body ausente/invalido ou CPF malformado).
+    - `401` -> `{ "message": "Nao autorizado" }` (CPF inexistente ou cliente inativo;
+      resposta generica de proposito).
+
+    CPF aceito com ou sem mascara. Definir a variavel `cpf` do ambiente antes de rodar.
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
