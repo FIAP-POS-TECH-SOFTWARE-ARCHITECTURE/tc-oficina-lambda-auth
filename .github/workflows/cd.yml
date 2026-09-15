@@ -57,6 +57,7 @@ jobs:
             -H 'content-type: application/json' -d '{"cpf":"000"}')
           [ "$code" = "400" ] || { echo "esperado 400, veio $code"; exit 1; }
           # CPF válido porém não cadastrado deve responder 401 (prova SSM -> RDS -> query)
+          # 98765432100 é só um CPF valido escolhido pra nao colidir com o seed do app (11144477735/52998224725 sao clientes reais)
           code2=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$API/auth/token" \
-            -H 'content-type: application/json' -d '{"cpf":"52998224725"}')
+            -H 'content-type: application/json' -d '{"cpf":"98765432100"}')
           [ "$code2" = "401" ] || { echo "esperado 401, veio $code2"; exit 1; }
