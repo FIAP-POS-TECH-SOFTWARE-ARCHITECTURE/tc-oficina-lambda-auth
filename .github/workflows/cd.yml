@@ -35,7 +35,7 @@ jobs:
 
       - name: Garante bucket do state Terraform
         run: |
-          BUCKET=tc-fiap-oficina-tfstate-076155200589
+          BUCKET=tc-fiap-oficina-tfstate-512135631497
           if ! aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
             aws s3api create-bucket --bucket "$BUCKET" --region us-east-1
             aws s3api put-bucket-versioning --bucket "$BUCKET" --versioning-configuration Status=Enabled
