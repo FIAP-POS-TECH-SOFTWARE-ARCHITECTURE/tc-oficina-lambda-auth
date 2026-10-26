@@ -63,9 +63,9 @@ resource "aws_lambda_permission" "token" {
 
 locals {
   rotas_cliente = {
-    "GET /os/acompanhamento/{numero}"      = "${local.app_base_url}/os/acompanhamento/{numero}"
-    "POST /os/{numero}/orcamento/aprovar"  = "${local.app_base_url}/os/{numero}/orcamento/aprovar"
-    "POST /os/{numero}/orcamento/rejeitar" = "${local.app_base_url}/os/{numero}/orcamento/rejeitar"
+    "GET /os/acompanhamento/{numero}"      = "${local.base_urls["os-service"]}/os/acompanhamento/{numero}"
+    "POST /os/{numero}/orcamento/aprovar"  = "${local.base_urls["os-service"]}/os/{numero}/orcamento/aprovar"
+    "POST /os/{numero}/orcamento/rejeitar" = "${local.base_urls["os-service"]}/os/{numero}/orcamento/rejeitar"
   }
 }
 
@@ -99,7 +99,7 @@ resource "aws_apigatewayv2_integration" "proxy" {
   api_id             = aws_apigatewayv2_api.main.id
   integration_type   = "HTTP_PROXY"
   integration_method = "ANY"
-  integration_uri    = "${local.app_base_url}/{proxy}"
+  integration_uri    = "${local.base_urls["os-service"]}/{proxy}"
 
   request_parameters = {
     "append:header.x-request-id" = "$context.requestId"
