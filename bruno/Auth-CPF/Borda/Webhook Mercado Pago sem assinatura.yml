@@ -1,0 +1,30 @@
+info:
+  name: Webhook Mercado Pago sem assinatura
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: "{{gatewayUrl}}/billing/webhooks/mercado-pago?data.id=123456&type=payment"
+  auth: none
+  body:
+    type: json
+    data: |-
+      {
+        "action": "payment.updated",
+        "type": "payment",
+        "data": { "id": "123456" }
+      }
+
+docs:
+  content: |-
+    Rota publica (sem authorizer) repassada ao billing-service. Sem `x-signature`
+    valido o billing recusa.
+
+    - `401` -> corpo do billing (`statusCode`, `message`, `error`), nao do gateway.
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

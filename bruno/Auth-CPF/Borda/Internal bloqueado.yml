@@ -1,0 +1,21 @@
+info:
+  name: Internal bloqueado
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: "{{gatewayUrl}}/internal/clientes/por-documento/{{cpf}}"
+  auth: none
+
+docs:
+  content: |-
+    Prova que os endpoints internos do os-service nao ficam expostos pela borda.
+
+    - `403` -> `{ "message": "Forbidden" }` respondido pelo API Gateway.
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
