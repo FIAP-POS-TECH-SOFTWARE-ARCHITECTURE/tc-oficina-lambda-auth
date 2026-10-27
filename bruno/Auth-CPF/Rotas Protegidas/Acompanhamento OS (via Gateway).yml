@@ -15,9 +15,8 @@ headers:
 
 docs:
   content: |-
-    Rota sensivel do cliente, servida pelo `tc-oficina-app` no EKS e exposta pelo
-    API Gateway atras do Lambda Authorizer. Prova que o token emitido em
-    "Emitir Token (CPF)" e aceito ponta a ponta.
+    Passo 2 do fluxo do cliente. Rota servida pelo os-service e exposta pelo
+    API Gateway atras do Lambda Authorizer.
 
     - `200` -> dados da OS (nome do cliente mascarado).
     - `401` -> sem token / token invalido / expirado (barrado no authorizer).

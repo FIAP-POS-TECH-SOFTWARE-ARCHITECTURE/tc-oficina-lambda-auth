@@ -1,14 +1,15 @@
 {
 	"info": {
-		"name": "tc-oficina-lambda-auth — Auth por CPF",
-		"description": "Export equivalente da collection Bruno (bruno/Auth-CPF). Rode 'Auth > Emitir Token (CPF)' primeiro: o script salva o JWT na variável 'token'. Defina 'gatewayUrl' (output api_endpoint do terraform apply), 'cpf' (cliente ativo) e 'osNumero' antes de rodar.",
+		"name": "tc-oficina-lambda-auth — Auth por CPF e fluxo do cliente",
+		"description": "Export equivalente da collection Bruno (bruno/Auth-CPF). Rode 'Auth > Emitir Token (CPF)' primeiro: o script salva o JWT na variável 'token'. Defina 'gatewayUrl' (output api_endpoint do terraform apply), 'cpf' (cliente ativo) e 'osNumero' antes de rodar. Fluxo: token -> acompanhamento -> orçamento -> aprovar (ou rejeitar).",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
 		{ "key": "gatewayUrl", "value": "https://SUA_API_ID.execute-api.us-east-1.amazonaws.com" },
 		{ "key": "token", "value": "" },
 		{ "key": "cpf", "value": "" },
-		{ "key": "osNumero", "value": "" }
+		{ "key": "osNumero", "value": "" },
+		{ "key": "linkPagamento", "value": "" }
 	],
 	"item": [
 		{
@@ -31,16 +32,13 @@
 					"request": {
 						"method": "POST",
 						"header": [ { "key": "Content-Type", "value": "application/json" } ],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"cpf\": \"{{cpf}}\"\n}"
-						},
+						"body": { "mode": "raw", "raw": "{\n  \"cpf\": \"{{cpf}}\"\n}" },
 						"url": {
 							"raw": "{{gatewayUrl}}/auth/token",
 							"host": [ "{{gatewayUrl}}" ],
 							"path": [ "auth", "token" ]
 						},
-						"description": "200 -> { token, expiresIn: 3600 } | 400 -> CPF inválido | 401 -> Não autorizado (CPF inexistente ou cliente inativo)."
+						"description": "200 -> { token, expiresIn: 3600 } | 400 -> CPF inválido | 401 -> Não autorizado (CPF inexistente ou cliente inativo) | 503 -> os-service indisponível."
 					}
 				}
 			]
@@ -58,7 +56,99 @@
 							"host": [ "{{gatewayUrl}}" ],
 							"path": [ "os", "acompanhamento", "{{osNumero}}" ]
 						},
-						"description": "Rota sensível do cliente servida pelo tc-oficina-app e protegida pelo Lambda Authorizer. 200 -> dados da OS | 401 -> token ausente/inválido | 403 -> OS de outro cliente | 404 -> OS inexistente."
+						"description": "Servida pelo os-service, protegida pelo Lambda Authorizer. 200 -> dados da OS | 401 -> token ausente/inválido | 403 -> OS de outro cliente | 404 -> OS inexistente."
+					}
+				},
+				{
+					"name": "Consultar Orcamento (Billing)",
+					"request": {
+						"method": "GET",
+						"header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+						"url": {
+							"raw": "{{gatewayUrl}}/billing/cliente/orcamentos/{{osNumero}}",
+							"host": [ "{{gatewayUrl}}" ],
+							"path": [ "billing", "cliente", "orcamentos", "{{osNumero}}" ]
+						},
+						"description": "Servida pelo billing-service, protegida pelo Lambda Authorizer. 200 -> orçamento (status, itens, total, linkPagamento se aprovado) | 401 | 403 -> outro cliente | 404 -> sem orçamento."
+					}
+				},
+				{
+					"name": "Aprovar Orcamento (Billing)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const body = pm.response.json();",
+									"const corpo = body && body.data ? body.data : body;",
+									"if (corpo && corpo.linkPagamento) { pm.collectionVariables.set('linkPagamento', corpo.linkPagamento); }"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+						"url": {
+							"raw": "{{gatewayUrl}}/billing/cliente/orcamentos/{{osNumero}}/aprovar",
+							"host": [ "{{gatewayUrl}}" ],
+							"path": [ "billing", "cliente", "orcamentos", "{{osNumero}}", "aprovar" ]
+						},
+						"description": "200 -> { linkPagamento, prazoPagamentoEm } (link do Checkout Pro salvo em 'linkPagamento') | 401 | 403 | 422 -> orçamento não está aguardando aprovação."
+					}
+				},
+				{
+					"name": "Rejeitar Orcamento (Billing)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{token}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"body": { "mode": "raw", "raw": "{\n  \"motivo\": \"Valor acima do esperado\"\n}" },
+						"url": {
+							"raw": "{{gatewayUrl}}/billing/cliente/orcamentos/{{osNumero}}/rejeitar",
+							"host": [ "{{gatewayUrl}}" ],
+							"path": [ "billing", "cliente", "orcamentos", "{{osNumero}}", "rejeitar" ]
+						},
+						"description": "Alternativa à aprovação ('motivo' opcional). 200 -> rejeitado | 401 | 403 | 422."
+					}
+				}
+			]
+		},
+		{
+			"name": "Borda",
+			"item": [
+				{
+					"name": "Internal bloqueado",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{gatewayUrl}}/internal/clientes/por-documento/{{cpf}}",
+							"host": [ "{{gatewayUrl}}" ],
+							"path": [ "internal", "clientes", "por-documento", "{{cpf}}" ]
+						},
+						"description": "403 -> { message: Forbidden } do API Gateway: endpoints internos não ficam expostos pela borda."
+					}
+				},
+				{
+					"name": "Webhook Mercado Pago sem assinatura",
+					"request": {
+						"method": "POST",
+						"header": [ { "key": "Content-Type", "value": "application/json" } ],
+						"body": { "mode": "raw", "raw": "{\n  \"action\": \"payment.updated\",\n  \"type\": \"payment\",\n  \"data\": { \"id\": \"123456\" }\n}" },
+						"url": {
+							"raw": "{{gatewayUrl}}/billing/webhooks/mercado-pago?data.id=123456&type=payment",
+							"host": [ "{{gatewayUrl}}" ],
+							"path": [ "billing", "webhooks", "mercado-pago" ],
+							"query": [
+								{ "key": "data.id", "value": "123456" },
+								{ "key": "type", "value": "payment" }
+							]
+						},
+						"description": "Rota pública repassada ao billing-service. Sem x-signature válido: 401 com corpo do billing (statusCode/message/error)."
 					}
 				}
 			]

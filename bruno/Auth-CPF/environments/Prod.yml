@@ -7,3 +7,5 @@ vars:
   cpf: ""
   # numero de uma OS do cliente autenticado, ex: OS-2026-0001
   osNumero: ""
+  # preenchido pelo script da request "Aprovar Orcamento (Billing)"
+  linkPagamento: ""

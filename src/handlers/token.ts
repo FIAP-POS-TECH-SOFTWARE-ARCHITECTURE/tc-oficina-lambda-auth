@@ -1,6 +1,6 @@
 import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from "aws-lambda";
+import { buscarClientePorCpf } from "../lib/clientes-os";
 import { cpfValido, normalizarCpf } from "../lib/cpf";
-import { buscarClientePorCpf } from "../lib/db";
 import { assinarTokenCliente, EXPIRES_IN } from "../lib/jwt";
 import { getParametro } from "../lib/ssm";
 

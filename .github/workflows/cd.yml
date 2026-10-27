@@ -50,14 +50,40 @@ jobs:
 
       - name: Smoke test
         run: |
+          ENV=${{ steps.env.outputs.environment }}
           API=$(terraform -chdir=terraform output -raw api_endpoint)
+          OS_URL=$(terraform -chdir=terraform output -raw os_service_url)
           echo "API: $API"
-          # CPF inválido deve responder 400 (prova que gateway+lambda estão vivos)
-          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$API/auth/token" \
-            -H 'content-type: application/json' -d '{"cpf":"000"}')
-          [ "$code" = "400" ] || { echo "esperado 400, veio $code"; exit 1; }
-          # CPF válido porém não cadastrado deve responder 401 (prova SSM -> RDS -> query)
-          # 98765432100 é só um CPF valido escolhido pra nao colidir com o seed do app (11144477735/52998224725 sao clientes reais)
-          code2=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$API/auth/token" \
-            -H 'content-type: application/json' -d '{"cpf":"98765432100"}')
-          [ "$code2" = "401" ] || { echo "esperado 401, veio $code2"; exit 1; }
+          echo "os-service: $OS_URL"
+          echo "Serviços roteados: $(terraform -chdir=terraform output -json servicos_roteados)"
+
+          espera() { # uso: espera <status esperado> <descricao> <args do curl...>
+            local esperado=$1 descricao=$2
+            shift 2
+            local veio
+            veio=$(curl -s -o /dev/null -w '%{http_code}' "$@")
+            [ "$veio" = "$esperado" ] || { echo "FALHA: $descricao: esperado $esperado, veio $veio"; exit 1; }
+            echo "ok: $descricao ($veio)"
+          }
+
+          # Gateway + Lambda token vivos
+          espera 400 "token com CPF malformado" -X POST "$API/auth/token" \
+            -H 'content-type: application/json' -d '{"cpf":"000"}'
+
+          # Endpoint interno do os-service existe (guard responde 401 sem chave)
+          # e a chave do SSM confere (404 = CPF sem cadastro).
+          # 98765432100 é um CPF válido que não colide com o seed (11144477735/52998224725).
+          KEY=$(aws ssm get-parameter --name "/oficina/$ENV/internal-api-key" \
+            --with-decryption --query Parameter.Value --output text)
+          echo "::add-mask::$KEY"
+          espera 401 "endpoint interno sem chave" "$OS_URL/internal/clientes/por-documento/98765432100"
+          espera 404 "endpoint interno com chave" -H "x-internal-api-key: $KEY" \
+            "$OS_URL/internal/clientes/por-documento/98765432100"
+
+          # Cadeia Lambda -> SSM -> os-service: CPF válido sem cadastro
+          espera 401 "token com CPF sem cadastro" -X POST "$API/auth/token" \
+            -H 'content-type: application/json' -d '{"cpf":"98765432100"}'
+
+          # Borda
+          espera 401 "rota de cliente sem token" "$API/os/acompanhamento/OS-SMOKE"
+          espera 403 "/internal bloqueado no gateway" "$API/internal/clientes/por-documento/98765432100"
