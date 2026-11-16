@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-    bucket       = "tc-fiap-oficina-tfstate-512135631497"
+    bucket       = "tc-fiap-oficina-tfstate-931118247889"
     region       = "us-east-1"
     use_lockfile = true
     # key definida via -backend-config no init:

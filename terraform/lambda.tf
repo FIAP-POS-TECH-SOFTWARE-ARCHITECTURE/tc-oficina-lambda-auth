@@ -15,7 +15,10 @@ resource "aws_lambda_function" "token" {
   memory_size      = 256
 
   environment {
-    variables = { ENVIRONMENT = var.environment }
+    variables = {
+      ENVIRONMENT    = var.environment
+      OS_SERVICE_URL = local.base_urls["os-service"]
+    }
   }
 }
 

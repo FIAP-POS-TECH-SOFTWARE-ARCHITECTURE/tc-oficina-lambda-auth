@@ -24,13 +24,15 @@ runtime:
 
 docs:
   content: |-
-    Emite o JWT de cliente a partir do CPF.
+    Emite o JWT de cliente a partir do CPF. A Lambda consulta o cliente no
+    os-service (endpoint interno) e assina o token.
 
     - `200` -> `{ "token": "<jwt>", "expiresIn": 3600 }` (cliente ativo). O script
       after-response salva `token` no ambiente.
     - `400` -> `{ "message": "CPF invalido" }` (body ausente/invalido ou CPF malformado).
     - `401` -> `{ "message": "Nao autorizado" }` (CPF inexistente ou cliente inativo;
       resposta generica de proposito).
+    - `503` -> `{ "message": "Servico indisponivel" }` (os-service fora do ar ou lento).
 
     CPF aceito com ou sem mascara. Definir a variavel `cpf` do ambiente antes de rodar.
 

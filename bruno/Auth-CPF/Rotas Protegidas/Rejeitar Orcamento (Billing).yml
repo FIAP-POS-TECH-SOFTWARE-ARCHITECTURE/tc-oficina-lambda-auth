@@ -1,0 +1,35 @@
+info:
+  name: Rejeitar Orcamento (Billing)
+  type: http
+  seq: 4
+
+http:
+  method: POST
+  url: "{{gatewayUrl}}/billing/cliente/orcamentos/{{osNumero}}/rejeitar"
+  auth: none
+  body:
+    type: json
+    data: |-
+      {
+        "motivo": "Valor acima do esperado"
+      }
+
+headers:
+  - name: Authorization
+    value: "Bearer {{token}}"
+    enabled: true
+
+docs:
+  content: |-
+    Alternativa ao passo 4: rejeita o orcamento (`motivo` opcional). A OS e
+    cancelada e a reserva de estoque estornada.
+
+    - `200` -> orcamento rejeitado.
+    - `401` / `403` -> como nas demais rotas do cliente.
+    - `422` -> orcamento nao esta aguardando aprovacao.
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

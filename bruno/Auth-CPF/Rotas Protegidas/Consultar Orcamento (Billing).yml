@@ -1,0 +1,30 @@
+info:
+  name: Consultar Orcamento (Billing)
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: "{{gatewayUrl}}/billing/cliente/orcamentos/{{osNumero}}"
+  auth: none
+
+headers:
+  - name: Authorization
+    value: "Bearer {{token}}"
+    enabled: true
+
+docs:
+  content: |-
+    Passo 3 do fluxo do cliente. Orcamento da OS, servido pelo billing-service
+    atras do Lambda Authorizer.
+
+    - `200` -> status, itens, total e `linkPagamento` (se ja aprovado).
+    - `401` -> sem token / token invalido (authorizer).
+    - `403` -> orcamento de outro cliente.
+    - `404` -> OS sem orcamento gerado.
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

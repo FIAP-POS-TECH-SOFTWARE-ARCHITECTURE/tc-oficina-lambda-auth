@@ -1,0 +1,39 @@
+info:
+  name: Aprovar Orcamento (Billing)
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: "{{gatewayUrl}}/billing/cliente/orcamentos/{{osNumero}}/aprovar"
+  auth: none
+
+headers:
+  - name: Authorization
+    value: "Bearer {{token}}"
+    enabled: true
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const corpo = res.body && res.body.data ? res.body.data : res.body;
+        if (corpo && corpo.linkPagamento) {
+          bru.setEnvVar("linkPagamento", corpo.linkPagamento);
+        }
+
+docs:
+  content: |-
+    Passo 4 do fluxo do cliente. Aprova o orcamento e recebe o link de pagamento
+    do Mercado Pago (Checkout Pro), salvo na variavel `linkPagamento`.
+
+    - `200` -> `{ "linkPagamento": "...", "prazoPagamentoEm": "..." }`.
+    - `401` -> sem token / token invalido (authorizer).
+    - `403` -> orcamento de outro cliente.
+    - `422` -> orcamento nao esta aguardando aprovacao.
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
